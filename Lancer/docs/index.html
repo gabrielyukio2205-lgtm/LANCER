@@ -1,0 +1,2690 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lancer - AI Search</title>
+    <meta name="description" content="AI-powered search with temporal intelligence">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0d0d0d;
+            --bg-secondary: #171717;
+            --bg-tertiary: #1f1f1f;
+            --bg-hover: #262626;
+            --text-primary: #fafafa;
+            --text-secondary: #a1a1aa;
+            --text-muted: #71717a;
+            --border: #262626;
+            --border-hover: #3f3f46;
+            --accent: #10a37f;
+            --accent-hover: #0d8a6a;
+            --accent-soft: rgba(16, 163, 127, 0.15);
+            --sidebar-width: 260px;
+        }
+
+        [data-theme="light"] {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f9fafb;
+            --bg-tertiary: #f3f4f6;
+            --bg-hover: #e5e7eb;
+            --text-primary: #111827;
+            --text-secondary: #4b5563;
+            --text-muted: #9ca3af;
+            --border: #e5e7eb;
+            --border-hover: #d1d5db;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+
+        /* Animations & Keyframes */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: -200% 0;
+            }
+
+            100% {
+                background-position: 200% 0;
+            }
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes bounceIn {
+            0% {
+                transform: scale(0.9);
+                opacity: 0;
+            }
+
+            50% {
+                transform: scale(1.02);
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideIn {
+            0% {
+                transform: translateX(-20px);
+                opacity: 0;
+            }
+
+            100% {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* Respect reduced motion preference */
+        @media (prefers-reduced-motion: reduce) {
+
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
+        /* Animated classes */
+        .fade-in {
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .slide-up {
+            animation: slideUp 0.5s ease-out;
+        }
+
+        .bounce-in {
+            animation: bounceIn 0.4s ease-out;
+        }
+
+        /* Staggered animation for lists */
+        .stagger-item {
+            animation: slideIn 0.3s ease-out both;
+        }
+
+        .stagger-item:nth-child(1) {
+            animation-delay: 0.05s;
+        }
+
+        .stagger-item:nth-child(2) {
+            animation-delay: 0.1s;
+        }
+
+        .stagger-item:nth-child(3) {
+            animation-delay: 0.15s;
+        }
+
+        .stagger-item:nth-child(4) {
+            animation-delay: 0.2s;
+        }
+
+        .stagger-item:nth-child(5) {
+            animation-delay: 0.25s;
+        }
+
+        .stagger-item:nth-child(6) {
+            animation-delay: 0.3s;
+        }
+
+        .stagger-item:nth-child(7) {
+            animation-delay: 0.35s;
+        }
+
+        .stagger-item:nth-child(8) {
+            animation-delay: 0.4s;
+        }
+
+        .stagger-item:nth-child(9) {
+            animation-delay: 0.45s;
+        }
+
+        .stagger-item:nth-child(10) {
+            animation-delay: 0.5s;
+        }
+
+        /* Skeleton loading effect */
+        .skeleton {
+            background: linear-gradient(90deg, var(--bg-tertiary) 25%, var(--bg-hover) 50%, var(--bg-tertiary) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 6px;
+        }
+
+        /* Layout with Sidebar */
+        .app {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            z-index: 100;
+            transform: translateX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar.collapsed {
+            transform: translateX(calc(-1 * var(--sidebar-width)));
+        }
+
+        .sidebar-header {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .sidebar-logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            text-decoration: none;
+        }
+
+        .sidebar-logo .icon {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent);
+        }
+
+        .sidebar-logo .icon svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .new-search-btn {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            margin: 1rem;
+            margin-bottom: 0;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 0.875rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+            width: calc(100% - 2rem);
+        }
+
+        .new-search-btn:hover {
+            background: var(--bg-hover);
+            border-color: var(--border-hover);
+        }
+
+        .new-search-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .sidebar-section {
+            padding: 1rem;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .sidebar-section-title {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+
+        .history-list {
+            list-style: none;
+        }
+
+        .history-item {
+            padding: 0.6rem 0.75rem;
+            margin: 0.25rem 0;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.15s;
+            overflow: hidden;
+        }
+
+        .history-item:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .history-item svg {
+            width: 14px;
+            height: 14px;
+            flex-shrink: 0;
+            opacity: 0.6;
+        }
+
+        .history-item span {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .history-empty {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            padding: 1rem 0;
+        }
+
+        .sidebar-footer {
+            padding: 1rem;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .sidebar-footer-btn {
+            flex: 1;
+            padding: 0.5rem;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-muted);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+            font-size: 0.75rem;
+            transition: all 0.2s;
+        }
+
+        .sidebar-footer-btn:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .sidebar-footer-btn svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        /* Main Content */
+        .main-wrapper {
+            flex: 1;
+            margin-left: var(--sidebar-width);
+            transition: margin-left 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .main-wrapper.expanded {
+            margin-left: 0;
+        }
+
+        .main {
+            flex: 1;
+            max-width: 800px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+        }
+
+        /* Top Bar */
+        .topbar {
+            padding: 1rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .toggle-sidebar-btn {
+            width: 36px;
+            height: 36px;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-muted);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .toggle-sidebar-btn:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .toggle-sidebar-btn svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        /* Hero */
+        .hero {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem 0;
+            text-align: center;
+        }
+
+        .hero.compact {
+            flex: none;
+            padding: 1rem 0;
+        }
+
+        .hero-title {
+            font-size: 2.25rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.02em;
+        }
+
+        .hero-subtitle {
+            color: var(--text-secondary);
+            font-size: 1rem;
+        }
+
+        .hero.compact .hero-title,
+        .hero.compact .hero-subtitle {
+            display: none;
+        }
+
+        /* Search */
+        .search-container {
+            width: 100%;
+            max-width: 680px;
+            margin-top: 2rem;
+        }
+
+        .hero.compact .search-container {
+            margin-top: 0;
+        }
+
+        .mode-selector {
+            display: flex;
+            gap: 0.25rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 4px;
+            margin: 0 auto 1rem;
+            width: fit-content;
+        }
+
+        .mode-btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            font-weight: 500;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .mode-btn:hover {
+            color: var(--text-secondary);
+            transform: translateY(-1px);
+        }
+
+        .mode-btn.active {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .mode-btn svg {
+            width: 15px;
+            height: 15px;
+        }
+
+        .search-box {
+            display: flex;
+            align-items: flex-end;
+            gap: 0.75rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 0.75rem;
+            transition: all 0.2s;
+        }
+
+        .search-box:focus-within {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-soft);
+        }
+
+        .search-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            padding: 0.5rem 0.75rem;
+            font-size: 1rem;
+            color: var(--text-primary);
+            outline: none;
+            resize: none;
+            min-height: 24px;
+            max-height: 200px;
+            line-height: 1.5;
+        }
+
+        .search-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .search-btn {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            border: none;
+            background: var(--accent);
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            flex-shrink: 0;
+        }
+
+        .search-btn:hover {
+            background: var(--accent-hover);
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(16, 163, 127, 0.4);
+        }
+
+        .search-btn:active {
+            transform: scale(0.95);
+        }
+
+        .search-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .search-btn svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .filters {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .filter-chip {
+            padding: 0.35rem 0.7rem;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filter-chip:hover {
+            border-color: var(--border-hover);
+            color: var(--text-secondary);
+        }
+
+        .filter-chip.active {
+            background: var(--accent-soft);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        /* Results */
+        .results-section {
+            padding: 1.5rem 0;
+        }
+
+        .progress-bar {
+            background: var(--bg-secondary);
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border: 1px solid var(--border);
+        }
+
+        /* Browser Agent UX */
+        .browse-shell {
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+            background:
+                radial-gradient(circle at 15% 0%, rgba(16, 163, 127, 0.16), transparent 42%),
+                radial-gradient(circle at 100% 0%, rgba(64, 129, 255, 0.18), transparent 40%),
+                linear-gradient(160deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
+            box-shadow: 0 20px 48px rgba(0, 0, 0, 0.22);
+            margin-bottom: 1rem;
+        }
+
+        .browse-header {
+            padding: 1rem 1.1rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        .browse-title-wrap {
+            display: flex;
+            flex-direction: column;
+            gap: 0.1rem;
+        }
+
+        .browse-kicker {
+            font-size: 0.68rem;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .browse-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.05rem;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+            color: var(--text-primary);
+        }
+
+        .browse-mode-tag {
+            font-size: 0.74rem;
+            padding: 0.32rem 0.62rem;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            white-space: nowrap;
+            font-weight: 600;
+        }
+
+        .browse-layout {
+            display: grid;
+            grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+            gap: 0.9rem;
+            padding: 0.95rem;
+        }
+
+        .browse-card {
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: color-mix(in srgb, var(--bg-secondary) 84%, transparent);
+            overflow: hidden;
+        }
+
+        .browse-card-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.68rem 0.78rem;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.76rem;
+            color: var(--text-secondary);
+        }
+
+        .browse-card-head strong {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+        }
+
+        .browse-trace-list {
+            max-height: 510px;
+            overflow: auto;
+            padding: 0.35rem;
+        }
+
+        .browse-trace-empty {
+            padding: 0.8rem;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .browse-trace-item {
+            display: grid;
+            grid-template-columns: 8px minmax(0, 1fr) auto;
+            gap: 0.6rem;
+            align-items: start;
+            padding: 0.5rem 0.6rem;
+            border-radius: 10px;
+            margin-bottom: 0.28rem;
+            border: 1px solid transparent;
+            transition: all 0.2s ease;
+        }
+
+        .browse-trace-item.is-done {
+            background: color-mix(in srgb, var(--bg-tertiary) 92%, transparent);
+            opacity: 0.84;
+        }
+
+        .browse-trace-item.is-active {
+            border-color: color-mix(in srgb, var(--accent) 48%, var(--border));
+            background: color-mix(in srgb, var(--accent) 12%, var(--bg-tertiary));
+            opacity: 1;
+        }
+
+        .browse-trace-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 999px;
+            margin-top: 0.35rem;
+            background: var(--text-muted);
+            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.03);
+        }
+
+        .browse-trace-item.is-active .browse-trace-dot {
+            background: var(--accent);
+            box-shadow: 0 0 0 4px rgba(16, 163, 127, 0.16);
+        }
+
+        .browse-trace-body {
+            min-width: 0;
+        }
+
+        .browse-trace-label {
+            font-size: 0.82rem;
+            color: var(--text-primary);
+            line-height: 1.4;
+            word-break: break-word;
+        }
+
+        .browse-trace-meta {
+            margin-top: 0.12rem;
+            font-size: 0.68rem;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-muted);
+        }
+
+        .browse-trace-state {
+            font-size: 0.66rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            padding: 0.22rem 0.44rem;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        .browse-trace-item.is-active .browse-trace-state {
+            color: var(--accent);
+            border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+            background: color-mix(in srgb, var(--accent) 10%, transparent);
+        }
+
+        .browse-main-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 0.9rem;
+            min-width: 0;
+        }
+
+        .browse-status-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0.5rem;
+            padding: 0.78rem;
+        }
+
+        .browse-progress-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.6rem;
+            padding: 0.82rem;
+        }
+
+        .browse-progress-col {
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: color-mix(in srgb, var(--bg-tertiary) 90%, transparent);
+            min-height: 136px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .browse-progress-title {
+            font-size: 0.68rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            padding: 0.6rem 0.65rem 0.45rem;
+            border-bottom: 1px solid var(--border);
+            font-weight: 600;
+        }
+
+        .browse-progress-list {
+            padding: 0.45rem 0.5rem 0.55rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            max-height: 210px;
+            overflow: auto;
+        }
+
+        .browse-progress-item {
+            font-size: 0.79rem;
+            color: var(--text-primary);
+            line-height: 1.36;
+            padding: 0.36rem 0.45rem;
+            border-radius: 8px;
+            background: color-mix(in srgb, var(--bg-primary) 40%, transparent);
+            border: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
+        }
+
+        .browse-progress-empty {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            line-height: 1.35;
+            padding: 0.35rem 0.25rem;
+        }
+
+        .browse-stat {
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 0.56rem 0.62rem;
+            background: color-mix(in srgb, var(--bg-tertiary) 88%, transparent);
+        }
+
+        .browse-stat-label {
+            font-size: 0.64rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.09em;
+            margin-bottom: 0.22rem;
+        }
+
+        .browse-stat-value {
+            font-size: 0.8rem;
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .browse-live-wrap {
+            padding: 0.8rem;
+        }
+
+        .browse-live-frame {
+            width: 100%;
+            min-height: 420px;
+            border: 0;
+            border-radius: 10px;
+            background: #111827;
+            display: block;
+        }
+
+        .browse-live-placeholder {
+            margin-top: 0.75rem;
+            border: 1px dashed var(--border);
+            border-radius: 10px;
+            padding: 0.92rem;
+            color: var(--text-secondary);
+            font-size: 0.82rem;
+            line-height: 1.45;
+            background: color-mix(in srgb, var(--bg-tertiary) 88%, transparent);
+        }
+
+        .browse-live-placeholder strong {
+            color: var(--text-primary);
+        }
+
+        .browse-answer-wrap {
+            padding: 0.95rem;
+        }
+
+        .browse-answer-state {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            line-height: 1.55;
+        }
+
+        .browse-answer-state strong {
+            color: var(--text-primary);
+        }
+
+        .browse-answer-content {
+            font-size: 0.92rem;
+            color: var(--text-primary);
+            line-height: 1.72;
+        }
+
+        .browse-answer-content strong {
+            color: color-mix(in srgb, var(--accent) 78%, var(--text-primary));
+        }
+
+        .browse-link-list {
+            margin-top: 0.95rem;
+            padding-top: 0.88rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .browse-link-list-title {
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            margin-bottom: 0.56rem;
+            font-weight: 600;
+        }
+
+        .browse-link-item {
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.4rem 0.2rem;
+            font-size: 0.79rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            border-radius: 8px;
+        }
+
+        .browse-link-item:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .browse-link-bullet {
+            width: 6px;
+            height: 6px;
+            border-radius: 999px;
+            background: var(--accent);
+            flex-shrink: 0;
+        }
+
+        .browse-link-text {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .browse-stream-off-note {
+            padding: 0.8rem;
+            border-top: 1px solid var(--border);
+            font-size: 0.8rem;
+            line-height: 1.45;
+            color: var(--text-secondary);
+            background: color-mix(in srgb, var(--bg-tertiary) 90%, transparent);
+        }
+
+        .browse-stream-off-note strong {
+            color: var(--text-primary);
+        }
+
+        [data-theme="light"] .browse-shell {
+            box-shadow: 0 16px 30px rgba(15, 23, 42, 0.08);
+        }
+
+        @media (max-width: 980px) {
+            .browse-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .browse-trace-list {
+                max-height: 260px;
+            }
+
+            .browse-status-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .browse-progress-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .browse-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .browse-status-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .browse-progress-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .browse-live-frame {
+                min-height: 280px;
+            }
+        }
+
+        .progress-step {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.35rem 0;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .progress-step.active {
+            color: var(--accent);
+        }
+
+        .progress-step.complete {
+            color: var(--text-secondary);
+        }
+
+        .spinner {
+            width: 14px;
+            height: 14px;
+            border: 2px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .answer-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+            animation: slideUp 0.4s ease-out;
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
+        }
+
+        .answer-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+        }
+
+        .answer-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .badge {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            background: var(--accent-soft);
+            color: var(--accent);
+            padding: 0.3rem 0.5rem;
+            border-radius: 5px;
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+
+        .badge svg {
+            width: 12px;
+            height: 12px;
+        }
+
+        .answer-content {
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            line-height: 1.7;
+        }
+
+        .answer-content h1,
+        .answer-content h2,
+        .answer-content h3 {
+            margin-top: 1.25rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .answer-content h1 {
+            font-size: 1.4rem;
+        }
+
+        .answer-content h2 {
+            font-size: 1.15rem;
+        }
+
+        .answer-content h3 {
+            font-size: 1rem;
+        }
+
+        .answer-content p {
+            margin-bottom: 0.75rem;
+        }
+
+        .answer-content ul,
+        .answer-content ol {
+            margin-left: 1.25rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .answer-content li {
+            margin-bottom: 0.35rem;
+        }
+
+        .answer-content a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        .answer-content a:hover {
+            text-decoration: underline;
+        }
+
+        .answer-content sup {
+            color: var(--accent);
+            font-weight: 500;
+            font-size: 0.75em;
+        }
+
+        .answer-content .citation {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.8em;
+            cursor: pointer;
+        }
+
+        .answer-content .citation:hover {
+            text-decoration: underline;
+        }
+
+        .source-item {
+            transition: background 0.3s ease;
+        }
+
+        .sources-section {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .sources-title {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        .source-item {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.5rem;
+            margin: 0 -0.5rem;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            animation: slideIn 0.3s ease-out both;
+        }
+
+        .source-item:nth-child(1) {
+            animation-delay: 0.05s;
+        }
+
+        .source-item:nth-child(2) {
+            animation-delay: 0.1s;
+        }
+
+        .source-item:nth-child(3) {
+            animation-delay: 0.15s;
+        }
+
+        .source-item:nth-child(4) {
+            animation-delay: 0.2s;
+        }
+
+        .source-item:nth-child(5) {
+            animation-delay: 0.25s;
+        }
+
+        .source-item:nth-child(6) {
+            animation-delay: 0.3s;
+        }
+
+        .source-item:nth-child(7) {
+            animation-delay: 0.35s;
+        }
+
+        .source-item:nth-child(8) {
+            animation-delay: 0.4s;
+        }
+
+        .source-item:nth-child(9) {
+            animation-delay: 0.45s;
+        }
+
+        .source-item:nth-child(10) {
+            animation-delay: 0.5s;
+        }
+
+        .source-item:hover {
+            background: var(--bg-hover);
+            transform: translateX(4px);
+        }
+
+        .source-num {
+            width: 22px;
+            height: 22px;
+            background: var(--bg-tertiary);
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        .source-title {
+            font-size: 0.8rem;
+            color: var(--text-primary);
+            text-decoration: none;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .source-title:hover {
+            color: var(--accent);
+        }
+
+        .source-badge {
+            font-size: 0.6rem;
+            padding: 0.1rem 0.35rem;
+            border-radius: 3px;
+            background: var(--bg-tertiary);
+            color: var(--text-muted);
+            margin-left: 0.25rem;
+            flex-shrink: 0;
+        }
+
+        .source-badge.scraped {
+            background: var(--accent-soft);
+            color: var(--accent);
+        }
+
+        .source-badge.engine {
+            background: #2a2a5a;
+            color: #8b8bff;
+        }
+
+        .source-badge.score {
+            background: #1a3a1a;
+            color: #6bff6b;
+            font-weight: 600;
+        }
+
+        [data-theme="light"] .source-badge.engine {
+            background: #e8e8ff;
+            color: #5555cc;
+        }
+
+        [data-theme="light"] .source-badge.score {
+            background: #e8ffe8;
+            color: #339933;
+        }
+
+        /* Image Gallery */
+        .images-section {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .images-title {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .images-title svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        .images-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+        }
+
+        .image-item {
+            aspect-ratio: 1;
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            background: var(--bg-tertiary);
+        }
+
+        .image-item:hover {
+            transform: scale(1.03);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .image-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Image Modal */
+        .image-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            cursor: pointer;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s;
+        }
+
+        .image-modal.open {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .image-modal img {
+            max-width: 90%;
+            max-height: 90%;
+            border-radius: 8px;
+        }
+
+        @media (max-width: 640px) {
+            .images-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        /* Footer */
+        .footer {
+            padding: 1rem;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+        }
+
+        .footer a {
+            color: var(--text-secondary);
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            color: var(--accent);
+        }
+
+        /* Mobile */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(calc(-1 * var(--sidebar-width)));
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .main-wrapper {
+                margin-left: 0;
+            }
+
+            .hero-title {
+                font-size: 1.5rem;
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease forwards;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <a href="/" class="sidebar-logo">
+                    <div class="icon">
+                        <img src="lancer-icon.png" alt="Lancer" style="width: 100%; height: 100%; border-radius: 6px;">
+                    </div>
+                    <span>Lancer</span>
+                </a>
+            </div>
+
+            <button class="new-search-btn" onclick="newSearch()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19" />
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+                New Search
+            </button>
+
+            <div class="sidebar-section">
+                <div class="sidebar-section-title">Recent</div>
+                <ul class="history-list" id="historyList">
+                    <li class="history-empty">No searches yet</li>
+                </ul>
+            </div>
+
+            <div class="sidebar-footer">
+                <button class="sidebar-footer-btn" onclick="clearHistory()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="3 6 5 6 21 6" />
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                    </svg>
+                    Clear
+                </button>
+                <button class="sidebar-footer-btn" onclick="toggleTheme()">
+                    <svg id="themeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                    </svg>
+                    Theme
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="main-wrapper" id="mainWrapper">
+            <div class="topbar">
+                <button class="toggle-sidebar-btn" onclick="toggleSidebar()" title="Toggle sidebar">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="3" y1="12" x2="21" y2="12" />
+                        <line x1="3" y1="6" x2="21" y2="6" />
+                        <line x1="3" y1="18" x2="21" y2="18" />
+                    </svg>
+                </button>
+            </div>
+
+            <div class="main">
+                <div class="hero" id="hero">
+                    <h1 class="hero-title">What do you want to know?</h1>
+                    <p class="hero-subtitle">AI-powered search with multi-source aggregation</p>
+
+                    <div class="search-container">
+                        <div class="mode-selector">
+                            <button class="mode-btn active" id="modeQuick" onclick="setMode('quick')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                                </svg>
+                                Quick
+                            </button>
+                            <button class="mode-btn" id="modeHeavy" onclick="setMode('heavy')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                    <polyline points="14 2 14 8 20 8" />
+                                </svg>
+                                Heavy
+                            </button>
+                            <button class="mode-btn" id="modeDeep" onclick="setMode('deep')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <line x1="12" y1="8" x2="12" y2="12" />
+                                    <line x1="12" y1="16" x2="12.01" y2="16" />
+                                </svg>
+                                Deep
+                            </button>
+                            <button class="mode-btn" id="modeSearxng" onclick="setMode('searxng')"
+                                title="Experimental: SearXNG + Embeddings">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path
+                                        d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                                    <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+                                    <line x1="12" y1="22.08" x2="12" y2="12" />
+                                </svg>
+                                SearXNG
+                            </button>
+                            <button class="mode-btn" id="modeCode" onclick="setMode('code')"
+                                title="Search GitHub, StackOverflow, and code repositories">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="16 18 22 12 16 6" />
+                                    <polyline points="8 6 2 12 8 18" />
+                                </svg>
+                                Code
+                            </button>
+                            <button class="mode-btn" id="modeAcademic" onclick="setMode('academic')"
+                                title="Search arXiv, Google Scholar, and academic papers">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                                </svg>
+                                Academic
+                            </button>
+                            <button class="mode-btn" id="modeBrowse" onclick="setMode('browse')"
+                                title="Browser Agent - navigate websites using AI">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <line x1="2" y1="12" x2="22" y2="12" />
+                                    <path
+                                        d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                                </svg>
+                                Browse
+                            </button>
+                        </div>
+
+                        <div class="search-box">
+                            <textarea class="search-input" id="searchInput" placeholder="Ask anything..."
+                                rows="1"></textarea>
+                            <button class="search-btn" id="searchBtn" onclick="executeSearch()">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="5" y1="12" x2="19" y2="12" />
+                                    <polyline points="12 5 19 12 12 19" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        <div class="filters" id="filtersContainer">
+                            <button class="filter-chip active" data-freshness="any">Anytime</button>
+                            <button class="filter-chip" data-freshness="day">Today</button>
+                            <button class="filter-chip" data-freshness="week">This week</button>
+                            <button class="filter-chip" data-freshness="month">This month</button>
+                        </div>
+
+                        <!-- Stream Visual Toggle (only shows in browse mode) -->
+                        <div class="filters" id="streamToggleContainer" style="display: none;">
+                            <label
+                                style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 6px 12px; background: var(--bg-tertiary); border-radius: 18px; border: 1px solid var(--border);">
+                                <input type="checkbox" id="streamVisualToggle"
+                                    style="width: 16px; height: 16px; accent-color: var(--accent);">
+                                <span style="font-size: 0.85rem; color: var(--text-secondary);">🎥 Stream Visual
+                                    (Chrome)</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <section class="results-section" id="results"></section>
+            </div>
+
+            <footer class="footer">
+                Built by <a href="https://github.com/gabrielyogi" target="_blank">Gabriel Yogi</a>
+            </footer>
+        </div>
+
+        <!-- Image Modal -->
+        <div class="image-modal" id="imageModal" onclick="closeImageModal()">
+            <img id="modalImage" src="" alt="">
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'https://madras1-lancer.hf.space/api/v1';
+        const RESULT_CACHE_KEY = 'lancer_results_cache';
+        const MAX_CACHE_ITEMS = 20;
+        let currentFreshness = 'any';
+        let currentMode = 'quick';
+        let history = JSON.parse(localStorage.getItem('lancer_history') || '[]');
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            renderHistory();
+            loadTheme();
+
+            const input = document.getElementById('searchInput');
+            input.addEventListener('input', function () {
+                this.style.height = 'auto';
+                this.style.height = Math.min(this.scrollHeight, 200) + 'px';
+            });
+            input.addEventListener('keydown', e => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    executeSearch();
+                }
+            });
+
+            document.querySelectorAll('.filter-chip').forEach(chip => {
+                chip.addEventListener('click', () => {
+                    setFreshness(chip.dataset.freshness);
+                });
+            });
+        });
+
+        function setFreshness(freshness) {
+            currentFreshness = freshness || 'any';
+            document.querySelectorAll('.filter-chip').forEach(c => {
+                c.classList.toggle('active', c.dataset.freshness === currentFreshness);
+            });
+        }
+
+        function getCacheKey(query, mode, freshness) {
+            const encodedQuery = encodeURIComponent(query).replace(/'/g, '%27');
+            return `${mode}|${freshness}|${encodedQuery}`;
+        }
+
+        function loadResultCache() {
+            try {
+                return JSON.parse(localStorage.getItem(RESULT_CACHE_KEY) || '{}');
+            } catch {
+                return {};
+            }
+        }
+
+        function saveResultCache(cache) {
+            try {
+                localStorage.setItem(RESULT_CACHE_KEY, JSON.stringify(cache));
+            } catch (e) {
+                console.log('Cache save error:', e);
+            }
+        }
+
+        function cacheRenderedResult(query, mode, freshness, html) {
+            if (!html) return;
+            const cache = loadResultCache();
+            const key = getCacheKey(query, mode, freshness);
+            cache[key] = {
+                query,
+                mode,
+                freshness,
+                html,
+                timestamp: Date.now(),
+            };
+            const entries = Object.entries(cache);
+            entries.sort((a, b) => (b[1].timestamp || 0) - (a[1].timestamp || 0));
+            const trimmed = entries.slice(0, MAX_CACHE_ITEMS);
+            saveResultCache(Object.fromEntries(trimmed));
+        }
+
+        function getCachedResult(query, mode, freshness) {
+            const cache = loadResultCache();
+            return cache[getCacheKey(query, mode, freshness)];
+        }
+
+        function renderCachedResult(cached) {
+            if (!cached || !cached.html) return false;
+            document.getElementById('hero').classList.add('compact');
+            document.getElementById('results').innerHTML = cached.html;
+            return true;
+        }
+
+        // History
+        function addToHistory(query, mode, freshness) {
+            const item = { query, mode, freshness, timestamp: Date.now() };
+            const key = getCacheKey(query, mode, freshness);
+            history = [
+                item,
+                ...history.filter(h => getCacheKey(h.query, h.mode, h.freshness || 'any') !== key),
+            ].slice(0, MAX_CACHE_ITEMS);
+            localStorage.setItem('lancer_history', JSON.stringify(history));
+            renderHistory();
+        }
+
+        function renderHistory() {
+            const list = document.getElementById('historyList');
+            if (history.length === 0) {
+                list.innerHTML = '<li class="history-empty">No searches yet</li>';
+                return;
+            }
+            list.innerHTML = history.map(h => {
+                const encodedQuery = encodeURIComponent(h.query).replace(/'/g, '%27');
+                const freshness = h.freshness || 'any';
+                return `
+                <li class="history-item" onclick="loadFromHistory('${encodedQuery}', '${h.mode}', '${freshness}')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                    <span>${escapeHtml(h.query)}</span>
+                </li>
+            `;
+            }).join('');
+        }
+
+        function loadFromHistory(encodedQuery, mode, freshness) {
+            const query = decodeURIComponent(encodedQuery);
+            document.getElementById('searchInput').value = query;
+            setMode(mode);
+            setFreshness(freshness || 'any');
+            const cached = getCachedResult(query, mode, freshness || 'any');
+            if (!renderCachedResult(cached)) {
+                document.getElementById('results').innerHTML =
+                    '<div class="answer-card"><div class="answer-content">Sem cache local para essa busca. Clique em Buscar para reexecutar.</div></div>';
+            }
+        }
+
+        function clearHistory() {
+            history = [];
+            localStorage.removeItem('lancer_history');
+            localStorage.removeItem(RESULT_CACHE_KEY);
+            renderHistory();
+        }
+
+        function newSearch() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('results').innerHTML = '';
+            document.getElementById('hero').classList.remove('compact');
+            document.getElementById('searchInput').focus();
+        }
+
+        // Sidebar
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const main = document.getElementById('mainWrapper');
+            sidebar.classList.toggle('collapsed');
+            main.classList.toggle('expanded');
+        }
+
+        // Theme
+        function toggleTheme() {
+            const html = document.documentElement;
+            const isLight = html.getAttribute('data-theme') === 'light';
+            html.setAttribute('data-theme', isLight ? '' : 'light');
+            localStorage.setItem('theme', isLight ? 'dark' : 'light');
+            updateThemeIcon(!isLight);
+        }
+
+        function loadTheme() {
+            const theme = localStorage.getItem('theme') || 'dark';
+            if (theme === 'light') {
+                document.documentElement.setAttribute('data-theme', 'light');
+                updateThemeIcon(true);
+            }
+        }
+
+        function updateThemeIcon(isLight) {
+            const icon = document.getElementById('themeIcon');
+            icon.innerHTML = isLight
+                ? '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>'
+                : '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
+        }
+
+        // Mode
+        function setMode(mode) {
+            currentMode = mode;
+            ['quick', 'heavy', 'deep', 'searxng', 'code', 'academic', 'browse'].forEach(m => {
+                document.getElementById('mode' + m.charAt(0).toUpperCase() + m.slice(1))
+                    .classList.toggle('active', m === mode);
+            });
+            document.getElementById('filtersContainer').style.display = ['deep', 'searxng', 'code', 'academic', 'browse'].includes(mode) ? 'none' : 'flex';
+            // Show stream toggle only for browse mode
+            document.getElementById('streamToggleContainer').style.display = mode === 'browse' ? 'flex' : 'none';
+            const placeholders = {
+                quick: 'Ask anything...',
+                heavy: 'Deep content analysis...',
+                deep: 'Complex research topic...',
+                searxng: 'SearXNG + Embedding rerank...',
+                code: 'Search code, GitHub, StackOverflow...',
+                academic: 'Search papers, arXiv, Google Scholar...',
+                browse: 'Find anything on the web... (e.g., "What is the weather in São Paulo?")'
+            };
+            document.getElementById('searchInput').placeholder = placeholders[mode];
+        }
+
+        // Search
+        function executeSearch() {
+            const query = document.getElementById('searchInput').value.trim();
+            if (!query) return;
+            document.getElementById('hero').classList.add('compact');
+            addToHistory(query, currentMode, currentFreshness);
+            if (currentMode === 'quick') quickSearch(query);
+            else if (currentMode === 'heavy') heavySearch(query);
+            else if (currentMode === 'searxng') searxngSearch(query);
+            else if (currentMode === 'code') codeSearch(query);
+            else if (currentMode === 'academic') academicSearch(query);
+            else if (currentMode === 'browse') browseAgentV2(query);
+            else deepResearch(query);
+        }
+
+        async function quickSearch(query) {
+            const results = document.getElementById('results');
+            const btn = document.getElementById('searchBtn');
+            const freshness = currentFreshness;
+            const mode = currentMode;
+            btn.disabled = true;
+            results.innerHTML = '<div class="progress-bar"><div class="progress-step active"><span class="spinner"></span> Searching...</div></div>';
+
+            try {
+                const res = await fetch(`${API_BASE}/search`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query, max_results: 10, freshness: freshness, include_answer: true })
+                });
+                const data = await res.json();
+                await displayResults(data, 'Quick Answer', '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>', query, mode, freshness);
+            } catch (e) {
+                results.innerHTML = `<div class="answer-card"><div class="answer-content">Error: ${e.message}</div></div>`;
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        async function heavySearch(query) {
+            const results = document.getElementById('results');
+            const btn = document.getElementById('searchBtn');
+            const freshness = currentFreshness;
+            const mode = currentMode;
+            btn.disabled = true;
+            results.innerHTML = '<div class="progress-bar" id="progressBar"><div class="progress-step active"><span class="spinner"></span> Searching sources...</div></div>';
+
+            let answer = '', sources = [];
+            try {
+                const res = await fetch(`${API_BASE}/search/heavy`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query, max_results: 15, freshness: freshness, include_answer: true })
+                });
+                const reader = res.body.getReader();
+                const decoder = new TextDecoder();
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    for (const line of decoder.decode(value).split('\n')) {
+                        if (line.startsWith('data: ')) {
+                            try {
+                                const d = JSON.parse(line.slice(6));
+                                updateProgress(d);
+                                if (d.type === 'answer_chunk') answer += d.content;
+                                if (d.type === 'results') sources = d.results;
+                            } catch { }
+                        }
+                    }
+                }
+                if (answer) {
+                    const images = await fetchImages(query);
+                    results.innerHTML = `<div class="answer-card fade-in">
+                        <div class="answer-header"><span class="badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Deep Analysis</span></div>
+                        <div class="answer-content">${formatMd(answer)}</div>
+                        ${images.length ? renderImages(images) : ''}
+                        ${renderSourcesHeavy(sources)}
+                    </div>`;
+                    cacheRenderedResult(query, mode, freshness, results.innerHTML);
+                }
+            } catch (e) {
+                results.innerHTML = `<div class="answer-card"><div class="answer-content">Error: ${e.message}</div></div>`;
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        async function searxngSearch(query) {
+            const results = document.getElementById('results');
+            const btn = document.getElementById('searchBtn');
+            const mode = currentMode;
+            btn.disabled = true;
+            results.innerHTML = '<div class="progress-bar" id="progressBar"><div class="progress-step active"><span class="spinner"></span> Searching SearXNG...</div></div>';
+
+            let searchResults = [];
+            try {
+                const res = await fetch(`${API_BASE}/search/searxng`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query, max_results: 10, freshness: 'any' })
+                });
+                const reader = res.body.getReader();
+                const decoder = new TextDecoder();
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    for (const line of decoder.decode(value).split('\n')) {
+                        if (line.startsWith('data: ')) {
+                            try {
+                                const d = JSON.parse(line.slice(6));
+                                if (d.type === 'status') {
+                                    document.getElementById('progressBar').innerHTML = `<div class="progress-step active"><span class="spinner"></span> ${d.message}</div>`;
+                                }
+                                if (d.type === 'searxng_complete') {
+                                    document.getElementById('progressBar').innerHTML += `<div class="progress-step complete">✓ Found ${d.count} results</div>`;
+                                }
+                                if (d.type === 'results') {
+                                    searchResults = d.results;
+                                }
+                                if (d.type === 'done') {
+                                    document.getElementById('progressBar').innerHTML += `<div class="progress-step complete">✓ Reranked to ${d.returned} results</div>`;
+                                }
+                                if (d.type === 'error') {
+                                    results.innerHTML = `<div class="answer-card"><div class="answer-content">Error: ${d.message}</div></div>`;
+                                    return;
+                                }
+                            } catch { }
+                        }
+                    }
+                }
+                if (searchResults.length) {
+                    const sourcesHtml = searchResults.map((r, i) => `
+                        <div class="source-item">
+                            <div class="source-num">${i + 1}</div>
+                            <a href="${r.url}" target="_blank" class="source-title">${escapeHtml(r.title)}</a>
+                            <span class="source-badge">${r.source}</span>
+                        </div>
+                    `).join('');
+
+                    results.innerHTML = `<div class="answer-card fade-in">
+                        <div class="answer-header"><span class="badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>SearXNG + Embeddings</span></div>
+                        <div class="answer-content">
+                            <p><strong>Results reranked with embedding similarity.</strong></p>
+                            <p>Found ${searchResults.length} most relevant results from SearXNG meta-search.</p>
+                        </div>
+                        <div class="sources-section">
+                            <div class="sources-title">Sources (ranked by embedding similarity)</div>
+                            ${sourcesHtml}
+                        </div>
+                    </div>`;
+                    cacheRenderedResult(query, mode, 'any', results.innerHTML);
+                }
+            } catch (e) {
+                results.innerHTML = `<div class="answer-card"><div class="answer-content">Error: ${e.message}</div></div>`;
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        async function codeSearch(query) {
+            const results = document.getElementById('results');
+            const btn = document.getElementById('searchBtn');
+            const mode = currentMode;
+            btn.disabled = true;
+            results.innerHTML = '<div class="progress-bar" id="progressBar"><div class="progress-step active"><span class="spinner"></span> Searching code repositories...</div></div>';
+
+            let searchResults = [];
+            try {
+                const res = await fetch(`${API_BASE}/search/code`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query, max_results: 15, freshness: 'any' })
+                });
+                const reader = res.body.getReader();
+                const decoder = new TextDecoder();
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    for (const line of decoder.decode(value).split('\n')) {
+                        if (line.startsWith('data: ')) {
+                            try {
+                                const d = JSON.parse(line.slice(6));
+                                if (d.type === 'status') {
+                                    document.getElementById('progressBar').innerHTML = `<div class="progress-step active"><span class="spinner"></span> ${d.message}</div>`;
+                                }
+                                if (d.type === 'search_complete') {
+                                    document.getElementById('progressBar').innerHTML += `<div class="progress-step complete">✓ Found ${d.count} results</div>`;
+                                }
+                                if (d.type === 'results') {
+                                    searchResults = d.results;
+                                }
+                                if (d.type === 'error') {
+                                    results.innerHTML = `<div class="answer-card"><div class="answer-content">Error: ${d.message}</div></div>`;
+                                    return;
+                                }
+                            } catch { }
+                        }
+                    }
+                }
+                if (searchResults.length) {
+                    results.innerHTML = `<div class="answer-card fade-in">
+                        <div class="answer-header"><span class="badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>Code Search</span></div>
+                        <div class="answer-content">
+                            <p><strong>Code repositories and programming Q&A.</strong></p>
+                            <p>Found ${searchResults.length} results from GitHub, StackOverflow, and more.</p>
+                        </div>
+                        ${renderSources(searchResults)}
+                    </div>`;
+                    cacheRenderedResult(query, mode, 'any', results.innerHTML);
+                }
+            } catch (e) {
+                results.innerHTML = `<div class="answer-card"><div class="answer-content">Error: ${e.message}</div></div>`;
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        async function academicSearch(query) {
+            const results = document.getElementById('results');
+            const btn = document.getElementById('searchBtn');
+            const mode = currentMode;
+            btn.disabled = true;
+            results.innerHTML = '<div class="progress-bar" id="progressBar"><div class="progress-step active"><span class="spinner"></span> Searching academic sources...</div></div>';
+
+            let searchResults = [];
+            try {
+                const res = await fetch(`${API_BASE}/search/academic`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query, max_results: 15, freshness: 'any' })
+                });
+                const reader = res.body.getReader();
+                const decoder = new TextDecoder();
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    for (const line of decoder.decode(value).split('\n')) {
+                        if (line.startsWith('data: ')) {
+                            try {
+                                const d = JSON.parse(line.slice(6));
+                                if (d.type === 'status') {
+                                    document.getElementById('progressBar').innerHTML = `<div class="progress-step active"><span class="spinner"></span> ${d.message}</div>`;
+                                }
+                                if (d.type === 'search_complete') {
+                                    document.getElementById('progressBar').innerHTML += `<div class="progress-step complete">✓ Found ${d.count} results</div>`;
+                                }
+                                if (d.type === 'results') {
+                                    searchResults = d.results;
+                                }
+                                if (d.type === 'error') {
+                                    results.innerHTML = `<div class="answer-card"><div class="answer-content">Error: ${d.message}</div></div>`;
+                                    return;
+                                }
+                            } catch { }
+                        }
+                    }
+                }
+                if (searchResults.length) {
+                    results.innerHTML = `<div class="answer-card fade-in">
+                        <div class="answer-header"><span class="badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>Academic Search</span></div>
+                        <div class="answer-content">
+                            <p><strong>Academic papers and research.</strong></p>
+                            <p>Found ${searchResults.length} results from arXiv, Google Scholar, and more.</p>
+                        </div>
+                        ${renderSources(searchResults)}
+                    </div>`;
+                    cacheRenderedResult(query, mode, 'any', results.innerHTML);
+                }
+            } catch (e) {
+                results.innerHTML = `<div class="answer-card"><div class="answer-content">Error: ${e.message}</div></div>`;
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        function getBrowseStepType(message) {
+            const msg = (message || '').toLowerCase();
+            if (msg.includes('search') || msg.includes('busc')) return 'search';
+            if (msg.includes('navigat') || msg.includes('visit')) return 'navigate';
+            if (msg.includes('extract') || msg.includes('fetch')) return 'extract';
+            if (msg.includes('analy') || msg.includes('think') || msg.includes('synth')) return 'analyze';
+            if (msg.includes('complete') || msg.includes('done') || msg.includes('ready')) return 'complete';
+            if (msg.includes('blocked') || msg.includes('error') || msg.includes('fail')) return 'warning';
+            return 'setup';
+        }
+
+        function buildBrowseShell(streamVisual) {
+            const modeLabel = streamVisual ? 'Visual Stream' : 'Stealth Mode';
+            const sessionLabel = streamVisual ? 'Chrome with Live Feed' : 'Headless Camoufox';
+            const streamInfo = streamVisual
+                ? 'Waiting for stream URL from the sandbox. The live viewport appears here as soon as the browser is ready.'
+                : '<strong>Stealth run:</strong> this mode does not expose video stream. Focus on the action timeline and final answer.';
+
+            return `
+                <div class="browse-shell fade-in">
+                    <div class="browse-header">
+                        <div class="browse-title-wrap">
+                            <div class="browse-kicker">Agent Session</div>
+                            <div class="browse-title">Browser Agent Workspace</div>
+                        </div>
+                        <div class="browse-mode-tag" id="browseModeTag">${modeLabel}</div>
+                    </div>
+                    <div class="browse-layout">
+                        <aside class="browse-card">
+                            <div class="browse-card-head">
+                                <strong>Agent Trace</strong>
+                                <span id="browseStepCount">0 steps</span>
+                            </div>
+                            <div class="browse-trace-list" id="browseTraceList">
+                                <div class="browse-trace-empty">Waiting for first action from the agent...</div>
+                            </div>
+                        </aside>
+                        <section class="browse-main-stack">
+                            <div class="browse-card">
+                                <div class="browse-card-head">
+                                    <strong>Session</strong>
+                                    <span id="browseSessionTag">${modeLabel}</span>
+                                </div>
+                                <div class="browse-status-grid">
+                                    <div class="browse-stat">
+                                        <div class="browse-stat-label">Mode</div>
+                                        <div class="browse-stat-value" id="browseStatusMode">${sessionLabel}</div>
+                                    </div>
+                                    <div class="browse-stat">
+                                        <div class="browse-stat-label">Elapsed</div>
+                                        <div class="browse-stat-value" id="browseStatusElapsed">0s</div>
+                                    </div>
+                                    <div class="browse-stat">
+                                        <div class="browse-stat-label">State</div>
+                                        <div class="browse-stat-value" id="browseStatusState">Starting</div>
+                                    </div>
+                                </div>
+                                <div class="browse-live-wrap">
+                                    <iframe class="browse-live-frame" id="browseLiveFrame" title="Browser stream" style="display:none;"></iframe>
+                                    <div class="browse-live-placeholder" id="browseLivePlaceholder">${streamInfo}</div>
+                                </div>
+                                ${streamVisual ? '' : '<div class="browse-stream-off-note"><strong>Tip:</strong> enable "Stream Visual (Chrome)" if you want to follow actions live.</div>'}
+                            </div>
+                            <div class="browse-card">
+                                <div class="browse-card-head">
+                                    <strong>Research Map</strong>
+                                    <span id="browseProgressTag">0 facts · 0 gaps</span>
+                                </div>
+                                <div class="browse-progress-grid">
+                                    <div class="browse-progress-col">
+                                        <div class="browse-progress-title">Known Facts</div>
+                                        <div class="browse-progress-list" id="browseKnownList">
+                                            <div class="browse-progress-empty">No facts collected yet.</div>
+                                        </div>
+                                    </div>
+                                    <div class="browse-progress-col">
+                                        <div class="browse-progress-title">Missing Points</div>
+                                        <div class="browse-progress-list" id="browseMissingList">
+                                            <div class="browse-progress-empty">No active gaps right now.</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="browse-card">
+                                <div class="browse-card-head">
+                                    <strong>Agent Output</strong>
+                                    <span id="browseOutputTag">Collecting context</span>
+                                </div>
+                                <div class="browse-answer-wrap" id="browseAnswerBody">
+                                    <div class="browse-answer-state"><strong>Agent started.</strong> Gathering pages, signals, and references.</div>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderBrowseVisitedLinks(links) {
+            if (!links || !links.length) return '';
+            return `
+                <div class="browse-link-list">
+                    <div class="browse-link-list-title">Visited Links</div>
+                    ${links.map(link => `
+                        <a class="browse-link-item" href="${link}" target="_blank" rel="noopener">
+                            <span class="browse-link-bullet"></span>
+                            <span class="browse-link-text">${escapeHtml(link)}</span>
+                        </a>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        function renderBrowseProgressMap(knownListEl, missingListEl, progressTagEl, knownFacts = [], missingPoints = []) {
+            const known = Array.isArray(knownFacts) ? knownFacts : [];
+            const missing = Array.isArray(missingPoints) ? missingPoints : [];
+
+            if (progressTagEl) {
+                progressTagEl.textContent = `${known.length} facts · ${missing.length} gaps`;
+            }
+
+            if (knownListEl) {
+                knownListEl.innerHTML = known.length
+                    ? known.map(item => `<div class="browse-progress-item">${escapeHtml(String(item))}</div>`).join('')
+                    : '<div class="browse-progress-empty">No facts collected yet.</div>';
+            }
+
+            if (missingListEl) {
+                missingListEl.innerHTML = missing.length
+                    ? missing.map(item => `<div class="browse-progress-item">${escapeHtml(String(item))}</div>`).join('')
+                    : '<div class="browse-progress-empty">No active gaps right now.</div>';
+            }
+        }
+
+        async function browseAgentV2(query) {
+            const results = document.getElementById('results');
+            const btn = document.getElementById('searchBtn');
+            const streamVisual = document.getElementById('streamVisualToggle').checked;
+            const startedAt = Date.now();
+
+            btn.disabled = true;
+            results.innerHTML = buildBrowseShell(streamVisual);
+
+            const urlMatch = query.match(/https?:\/\/[^\s]+/);
+            const url = urlMatch ? urlMatch[0] : null;
+            const task = query;
+
+            const traceList = document.getElementById('browseTraceList');
+            const stepCount = document.getElementById('browseStepCount');
+            const statusElapsed = document.getElementById('browseStatusElapsed');
+            const statusState = document.getElementById('browseStatusState');
+            const outputTag = document.getElementById('browseOutputTag');
+            const sessionTag = document.getElementById('browseSessionTag');
+            const liveFrame = document.getElementById('browseLiveFrame');
+            const livePlaceholder = document.getElementById('browseLivePlaceholder');
+            const answerBody = document.getElementById('browseAnswerBody');
+            const knownListEl = document.getElementById('browseKnownList');
+            const missingListEl = document.getElementById('browseMissingList');
+            const progressTagEl = document.getElementById('browseProgressTag');
+
+            const stepHistory = [];
+            let resultContent = '';
+            let resultLinks = [];
+            let hasStream = false;
+
+            renderBrowseProgressMap(knownListEl, missingListEl, progressTagEl, [], []);
+
+            const elapsedTicker = setInterval(() => {
+                if (!statusElapsed) return;
+                const elapsedSeconds = Math.max(0, Math.floor((Date.now() - startedAt) / 1000));
+                statusElapsed.textContent = `${elapsedSeconds}s`;
+            }, 1000);
+
+            const renderTrace = () => {
+                stepCount.textContent = `${stepHistory.length} ${stepHistory.length === 1 ? 'step' : 'steps'}`;
+
+                if (!stepHistory.length) {
+                    traceList.innerHTML = '<div class="browse-trace-empty">Waiting for first action from the agent...</div>';
+                    return;
+                }
+
+                const visibleSteps = stepHistory.slice(-20);
+                traceList.innerHTML = visibleSteps.map((step, i) => {
+                    const isActive = i === visibleSteps.length - 1 && !step.done;
+                    const rowClass = isActive ? 'is-active' : 'is-done';
+                    return `
+                        <div class="browse-trace-item ${rowClass}">
+                            <span class="browse-trace-dot"></span>
+                            <div class="browse-trace-body">
+                                <div class="browse-trace-label">${escapeHtml(step.message)}</div>
+                                <div class="browse-trace-meta">${step.time}</div>
+                            </div>
+                            <span class="browse-trace-state">${step.label}</span>
+                        </div>
+                    `;
+                }).join('');
+            };
+
+            try {
+                const res = await fetch(`${API_BASE}/agent/browse`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ task, url, stream_visual: streamVisual })
+                });
+
+                if (!res.ok || !res.body) {
+                    throw new Error(`Request failed (${res.status})`);
+                }
+
+                const reader = res.body.getReader();
+                const decoder = new TextDecoder();
+                let sseBuffer = '';
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    sseBuffer += decoder.decode(value, { stream: true });
+                    const lines = sseBuffer.split('\n');
+                    sseBuffer = lines.pop() || '';
+
+                    for (const line of lines) {
+                        if (!line.startsWith('data: ')) continue;
+
+                        try {
+                            const d = JSON.parse(line.slice(6));
+
+                            if (d.type === 'status') {
+                                const stepType = getBrowseStepType(d.message);
+                                stepHistory.push({
+                                    message: d.message || 'Processing...',
+                                    label: stepType,
+                                    done: false,
+                                    time: new Date().toLocaleTimeString('pt-BR', {
+                                        hour: '2-digit',
+                                        minute: '2-digit',
+                                        second: '2-digit'
+                                    }),
+                                });
+                                if (stepHistory.length > 1) {
+                                    stepHistory[stepHistory.length - 2].done = true;
+                                }
+                                statusState.textContent = stepType === 'warning' ? 'Handling issue' : 'Running';
+                                outputTag.textContent = 'Collecting context';
+                                renderTrace();
+                            }
+
+                            if (d.type === 'progress') {
+                                renderBrowseProgressMap(
+                                    knownListEl,
+                                    missingListEl,
+                                    progressTagEl,
+                                    d.known_facts || [],
+                                    d.missing_points || []
+                                );
+                            }
+
+                            if (d.type === 'stream' && d.url) {
+                                hasStream = true;
+                                liveFrame.style.display = 'block';
+                                liveFrame.src = d.url;
+                                livePlaceholder.style.display = 'none';
+                                sessionTag.textContent = 'Live connected';
+                                statusState.textContent = 'Streaming';
+                            }
+
+                            if (d.type === 'stream_end') {
+                                if (hasStream) {
+                                    sessionTag.textContent = 'Live stream ended';
+                                    livePlaceholder.style.display = 'block';
+                                    livePlaceholder.innerHTML = 'Live session finished. The final summary and links remain available below.';
+                                }
+                            }
+
+                            if (d.type === 'result') {
+                                resultContent = d.content || '';
+                                resultLinks = d.links || [];
+                                outputTag.textContent = 'Draft generated';
+                            }
+
+                            if (d.type === 'complete') {
+                                if (stepHistory.length) {
+                                    stepHistory[stepHistory.length - 1].done = true;
+                                }
+                                statusState.textContent = 'Complete';
+                                outputTag.textContent = 'Final answer';
+                                renderTrace();
+                            }
+
+                            if (d.type === 'error') {
+                                statusState.textContent = 'Error';
+                                outputTag.textContent = 'Failed';
+                                answerBody.innerHTML = `<div class="browse-answer-state"><strong>Agent error:</strong> ${escapeHtml(d.message || 'Unknown error')}</div>`;
+                                return;
+                            }
+                        } catch (e) {
+                            // ignore malformed SSE payloads
+                        }
+                    }
+                }
+
+                if (resultContent) {
+                    answerBody.innerHTML = `
+                        <div class="browse-answer-content">${formatMd(resultContent)}</div>
+                        ${renderBrowseVisitedLinks(resultLinks)}
+                    `;
+                } else {
+                    answerBody.innerHTML = '<div class="browse-answer-state"><strong>Execution finished.</strong> No final answer content was returned by the agent.</div>';
+                }
+            } catch (e) {
+                statusState.textContent = 'Error';
+                outputTag.textContent = 'Failed';
+                answerBody.innerHTML = `<div class="browse-answer-state"><strong>Request error:</strong> ${escapeHtml(e.message)}</div>`;
+            } finally {
+                clearInterval(elapsedTicker);
+                btn.disabled = false;
+            }
+        }
+
+        async function deepResearch(query) {
+            const results = document.getElementById('results');
+            const btn = document.getElementById('searchBtn');
+            const freshness = currentFreshness;
+            const mode = currentMode;
+            btn.disabled = true;
+            results.innerHTML = '<div class="progress-bar" id="progressBar"><div class="progress-step active"><span class="spinner"></span> Planning research...</div></div>';
+
+            let report = '';
+            try {
+                const res = await fetch(`${API_BASE}/research/deep`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query, max_dimensions: 5, max_sources_per_dim: 5, max_total_searches: 20 })
+                });
+                const reader = res.body.getReader();
+                const decoder = new TextDecoder();
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    for (const line of decoder.decode(value).split('\n')) {
+                        if (line.startsWith('data: ')) {
+                            try {
+                                const d = JSON.parse(line.slice(6));
+                                updateDeepProgress(d);
+                                if (d.type === 'report_chunk') report += d.content;
+                            } catch { }
+                        }
+                    }
+                }
+                if (report) {
+                    results.innerHTML = `<div class="answer-card fade-in">
+                        <div class="answer-header"><span class="badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Research Report</span></div>
+                        <div class="answer-content">${formatMd(report)}</div>
+                    </div>`;
+                    cacheRenderedResult(query, mode, freshness, results.innerHTML);
+                }
+            } catch (e) {
+                results.innerHTML = `<div class="answer-card"><div class="answer-content">Error: ${e.message}</div></div>`;
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        async function displayResults(data, label, icon, query, mode, freshness) {
+            const results = document.getElementById('results');
+            if (data.answer) {
+                // Fetch images in parallel
+                const images = await fetchImages(query);
+                results.innerHTML = `<div class="answer-card fade-in">
+                    <div class="answer-header"><span class="badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${icon}</svg>${label}</span></div>
+                    <div class="answer-content">${formatMd(data.answer)}</div>
+                    ${images.length ? renderImages(images) : ''}
+                    ${data.results?.length ? renderSources(data.results.slice(0, 5)) : ''}
+                </div>`;
+                cacheRenderedResult(query, mode, freshness, results.innerHTML);
+            }
+        }
+
+        function updateProgress(d) {
+            const bar = document.getElementById('progressBar');
+            if (!bar) return;
+            const map = {
+                status: `<div class="progress-step active"><span class="spinner"></span> ${d.message}</div>`,
+                search_complete: `<div class="progress-step complete">✓ Found ${d.results_count} sources</div>`,
+                scrape_complete: `<div class="progress-step complete">✓ Read ${d.scraped_count} pages</div>`,
+                answer_start: `<div class="progress-step active"><span class="spinner"></span> Generating...</div>`
+            };
+            if (map[d.type]) bar.innerHTML = d.type === 'status' ? map[d.type] : bar.innerHTML + map[d.type];
+        }
+
+        function updateDeepProgress(d) {
+            const bar = document.getElementById('progressBar');
+            if (!bar) return;
+            if (d.type === 'plan_ready') {
+                bar.innerHTML = `<div class="progress-step complete">✓ Plan ready</div>` +
+                    d.dimensions.map((dim, i) => `<div class="progress-step" id="dim${i}" style="padding-left:1rem;font-size:0.8rem;">○ ${dim.name}</div>`).join('');
+            } else if (d.type === 'dimension_start') {
+                const el = document.getElementById(`dim${d.index - 1}`);
+                if (el) { el.className = 'progress-step active'; el.innerHTML = `<span class="spinner"></span> ${d.name}`; }
+            } else if (d.type === 'dimension_complete') {
+                const el = document.getElementById(`dim${d.index - 1}`);
+                if (el) { el.className = 'progress-step complete'; el.innerHTML = `✓ ${d.name} (${d.results_count})`; }
+            } else if (d.type === 'synthesis_start') {
+                bar.innerHTML += `<div class="progress-step active"><span class="spinner"></span> Writing report...</div>`;
+            }
+        }
+
+        function renderSources(sources) {
+            if (!sources.length) return '';
+            return `<div class="sources-section"><div class="sources-title">Sources</div>${sources.map((s, i) => {
+                const engine = s.source ? s.source.split(':').pop() : '';
+                const scorePercent = s.score ? Math.round(s.score * 100) : 0;
+                return `
+                <div class="source-item" id="source-${i + 1}">
+                    <div class="source-num">${i + 1}</div>
+                    <a href="${s.url}" target="_blank" class="source-title">${escapeHtml(s.title || 'Untitled')}</a>
+                    ${engine ? `<span class="source-badge engine">${engine}</span>` : ''}
+                    ${scorePercent > 0 ? `<span class="source-badge score" title="Confidence: ${scorePercent}%">${scorePercent}%</span>` : ''}
+                </div>`;
+            }).join('')}</div>`;
+        }
+
+        function renderSourcesHeavy(sources) {
+            if (!sources.length) return '';
+            return `<div class="sources-section"><div class="sources-title">Sources</div>${sources.map((s, i) => {
+                const engine = s.source ? s.source.split(':').pop() : '';
+                const scorePercent = s.score ? Math.round(s.score * 100) : 0;
+                return `
+                <div class="source-item" id="source-${i + 1}">
+                    <div class="source-num">${i + 1}</div>
+                    <a href="${s.url}" target="_blank" class="source-title">${escapeHtml(s.title || 'Untitled')}</a>
+                    <span class="source-badge ${s.scraped ? 'scraped' : ''}">${s.scraped ? '📄 Full' : '📋 Snippet'}</span>
+                    ${engine ? `<span class="source-badge engine">${engine}</span>` : ''}
+                    ${scorePercent > 0 ? `<span class="source-badge score" title="Confidence: ${scorePercent}%">${scorePercent}%</span>` : ''}
+                </div>`;
+            }).join('')}</div>`;
+        }
+
+        function formatInline(text) {
+            return text
+                .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.+?)\*/g, '<em>$1</em>')
+                .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank">$1</a>')
+                .replace(/\[(\d+)\]/g, '<a href="#source-$1" class="citation" onclick="scrollToSource($1); return false;">[$1]</a>');
+        }
+
+        function formatMd(text) {
+            const lines = text.replace(/\r\n/g, '\n').split('\n');
+            let html = '';
+            let paragraph = [];
+            let listType = null;
+
+            const flushParagraph = () => {
+                if (!paragraph.length) return;
+                html += `<p>${formatInline(paragraph.join(' '))}</p>`;
+                paragraph = [];
+            };
+
+            const closeList = () => {
+                if (!listType) return;
+                html += `</${listType}>`;
+                listType = null;
+            };
+
+            const openList = (type) => {
+                if (listType === type) return;
+                if (listType) {
+                    html += `</${listType}>`;
+                }
+                html += `<${type}>`;
+                listType = type;
+            };
+
+            for (const rawLine of lines) {
+                const line = rawLine.trim();
+                if (!line) {
+                    flushParagraph();
+                    closeList();
+                    continue;
+                }
+
+                const headingMatch = line.match(/^(#{1,3})\s+(.*)$/);
+                if (headingMatch) {
+                    flushParagraph();
+                    closeList();
+                    const level = headingMatch[1].length;
+                    html += `<h${level}>${formatInline(headingMatch[2])}</h${level}>`;
+                    continue;
+                }
+
+                const orderedMatch = line.match(/^\d+\.\s+(.*)$/);
+                if (orderedMatch) {
+                    flushParagraph();
+                    openList('ol');
+                    html += `<li>${formatInline(orderedMatch[1])}</li>`;
+                    continue;
+                }
+
+                const bulletMatch = line.match(/^[-*]\s+(.*)$/);
+                if (bulletMatch) {
+                    flushParagraph();
+                    openList('ul');
+                    html += `<li>${formatInline(bulletMatch[1])}</li>`;
+                    continue;
+                }
+
+                closeList();
+                paragraph.push(line);
+            }
+
+            flushParagraph();
+            closeList();
+            return html;
+        }
+
+        function scrollToSource(num) {
+            const el = document.getElementById('source-' + num);
+            if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                el.style.background = 'var(--accent-soft)';
+                setTimeout(() => el.style.background = '', 1500);
+            }
+        }
+
+        function escapeHtml(t) { return t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+        // Image Search
+        async function fetchImages(query) {
+            try {
+                const res = await fetch(`${API_BASE}/images?query=${encodeURIComponent(query)}&max_results=6`);
+                if (!res.ok) return [];
+                const data = await res.json();
+                return data.images || [];
+            } catch (e) {
+                console.log('Image fetch error:', e);
+                return [];
+            }
+        }
+
+        function renderImages(images) {
+            if (!images.length) return '';
+            return `
+                <div class="images-section">
+                    <div class="images-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                            <circle cx="8.5" cy="8.5" r="1.5"/>
+                            <polyline points="21 15 16 10 5 21"/>
+                        </svg>
+                        Related Images
+                    </div>
+                    <div class="images-grid">
+                        ${images.map(img => `
+                            <div class="image-item" onclick="openImageModal('${img.url}')">
+                                <img src="${img.thumbnail}" alt="${escapeHtml(img.title || '')}" loading="lazy" onerror="this.parentElement.style.display='none'">
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function openImageModal(url) {
+            const modal = document.getElementById('imageModal');
+            const img = document.getElementById('modalImage');
+            img.src = url;
+            modal.classList.add('open');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeImageModal() {
+            document.getElementById('imageModal').classList.remove('open');
+            document.body.style.overflow = '';
+        }
+
+        // Escape key to close modal
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') closeImageModal();
+        });
+    </script>
+</body>
+
+</html>
